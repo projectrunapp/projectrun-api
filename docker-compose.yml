@@ -1,0 +1,14 @@
+version: '3.3'
+services:
+  db_service:
+    image: postgres:13
+    ports:
+      - ${DB_PORT}:5432
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    networks:
+      - nest_network
+networks:
+  nest_network:
