@@ -3,6 +3,10 @@
 
 ---
 
+<div style="text-align: center">
+    <img src="https://drive.google.com/uc?id=11GOe2SHmc2LsGw81MDGvzoFrFPXoV48C" alt="Logo">
+</div>
+
 #### About:
 
 The API project built with Nest.js for the ProjectRun.
@@ -52,7 +56,9 @@ npx prisma studio
 
 #### Resources:
 
-- [Postman workspace](https://go.postman.co/workspace/4c1f641c-e02c-4aa5-b636-565308855c75)
+- GitLab [group](https://gitlab.com/projectrun)
+- Trello [board](https://trello.com/b/SsjxwCku/projectrun-backend)
+- Postman [workspace](https://go.postman.co/workspace/4c1f641c-e02c-4aa5-b636-565308855c75)
 
 
 
