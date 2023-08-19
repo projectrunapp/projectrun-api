@@ -9,7 +9,20 @@ export class UserService {
     async getById(id: number): Promise<any> {
         return this.prisma.user.findUnique({
             where: {id},
-            select: {id: true, email: true, name: true, createdAt: true}
+            select: {
+                id: true, createdAt: true,
+                email: true, name: true, username: true, gender: true, birth_date: true,
+            }
+        });
+    }
+
+    async getByUsername(username: string): Promise<any> {
+        return this.prisma.user.findUnique({
+            where: {username},
+            select: {
+                id: true, createdAt: true,
+                email: true, name: true, username: true, gender: true, birth_date: true,
+            }
         });
     }
 

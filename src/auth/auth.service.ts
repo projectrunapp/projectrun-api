@@ -15,14 +15,20 @@ export class AuthService {
         private config: ConfigService,
     ) {}
 
-    async register(dataDto: RegisterDto) {
+    async register(dataDto: RegisterDto): Promise<{ success: boolean, message: string, data?: any }> {
         try {
-            const userExists = await this.prisma.user.findUnique({
+            const userWithEmail = await this.prisma.user.findUnique({
                 where: {email: dataDto.email}
             });
+            if (userWithEmail) {
+                return {success: false, message: "Email taken!"};
+            }
 
-            if (userExists) {
-                return {success: false, message: "User already exists!"};
+            const userWithUsername = await this.prisma.user.findUnique({
+                where: {username: dataDto.username},
+            });
+            if (userWithUsername) {
+                return {success: false, message: "Username taken!"};
             }
 
             const hashedPassword = await argon2.hash(dataDto.password);
@@ -30,8 +36,11 @@ export class AuthService {
             const user = await this.prisma.user.create({
                 data: {
                     name: dataDto.name,
+                    username: dataDto.username,
                     email: dataDto.email,
                     hash: hashedPassword,
+                    birth_date: dataDto.birth_date,
+                    gender: dataDto.gender,
                 },
                 select: {id: true, email: true, name: true, createdAt: true}
             });
@@ -46,7 +55,7 @@ export class AuthService {
         }
     }
 
-    async login(dataDto: LoginDto) {
+    async login(dataDto: LoginDto): Promise<{ success: boolean, message: string, data?: any }> {
         try {
             const user = await this.prisma.user.findUnique({
                 where: {email: dataDto.email}

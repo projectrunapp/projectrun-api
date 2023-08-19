@@ -42,6 +42,16 @@ export class UserController {
 
     @Put()
     async update(@GetUser() user: User, @Body() updateUserDto: UpdateDto): Promise<{ success: boolean, message: string }> {
+        if (updateUserDto.username) {
+            const userWithUsername = await this.userService.getByUsername(updateUserDto.username);
+            if (userWithUsername && userWithUsername.id !== user.id) {
+                return {
+                    success: false,
+                    message: 'Username already taken!',
+                };
+            }
+        }
+
         await this.userService.update(user.id, updateUserDto);
 
         return {
