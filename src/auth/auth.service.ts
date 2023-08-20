@@ -45,10 +45,7 @@ export class AuthService {
                 select: {id: true, email: true, name: true, createdAt: true}
             });
 
-            return {
-                success: true,
-                message: "User created successfully!",
-            };
+            return {success: true, message: "User created successfully!"};
         } catch (err) {
             const message = (err.response && err.response.data.message) || err.message || err.toString();
             return {success: false, message};
