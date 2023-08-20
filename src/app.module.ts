@@ -5,6 +5,7 @@ import { UserModule } from './user/user.module';
 import { RunModule } from './run/run.module';
 import { PrismaModule } from './prisma/prisma.module';
 import {ConfigModule} from "@nestjs/config";
+import {FriendshipModule} from "./friendship/friendship.module";
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import {ConfigModule} from "@nestjs/config";
     }),
     AuthModule,
     UserModule,
+    FriendshipModule,
     RunModule,
     PrismaModule,
   ],

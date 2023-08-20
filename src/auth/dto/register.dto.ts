@@ -4,7 +4,7 @@ import {IsEmail, IsIn, IsNotEmpty, IsString, Matches} from "class-validator";
 export class RegisterDto {
     @IsString()
     @IsNotEmpty()
-    @Matches(/^\d{4}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$/)
+    @Matches(/^(?=.{4,20}$)(?:[a-z\d]+(?:(?:\.|_)[a-z\d])*)+$/)
     username: string;
 
     @IsEmail()

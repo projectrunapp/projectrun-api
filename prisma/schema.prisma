@@ -17,9 +17,32 @@ model User {
   birth_date String?
   gender     String
   username   String   @unique
-  runs       Run[]
+
+  received Friendship[] @relation("Receiver")
+  sent     Friendship[] @relation("Sender")
+  runs     Run[]
 
   @@map("users")
+}
+
+enum EnumRelationshipStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+model Friendship {
+  id        String                 @id @default(uuid())
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
+  status    EnumRelationshipStatus @default(PENDING)
+  not_seen  Boolean                @default(true)
+
+  senderId   Int
+  sender     User @relation("Sender", fields: [senderId], references: [id])
+  receiverId Int
+  receiver   User @relation("Receiver", fields: [receiverId], references: [id])
+
+  @@map("friendships")
 }
 
 model Run {
@@ -27,7 +50,6 @@ model Run {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   title           String
-  userId          Int
   calories_burned Int      @default(0)
   datetime_start  DateTime @default(now())
   distance        Float    @default(0)
@@ -41,7 +63,9 @@ model Run {
   temperature     Int?
   terrain         String
   weather         String
-  user            User     @relation(fields: [userId], references: [id])
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
 
   @@map("runs")
 }
