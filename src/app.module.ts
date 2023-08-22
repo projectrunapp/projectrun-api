@@ -6,6 +6,9 @@ import { RunModule } from './run/run.module';
 import { PrismaModule } from './prisma/prisma.module';
 import {ConfigModule} from "@nestjs/config";
 import {FriendshipModule} from "./friendship/friendship.module";
+import {ServeStaticModule} from "@nestjs/serve-static";
+import * as path from "path";
+import {MailModule} from "./mail/mail.module";
 
 @Module({
   imports: [
@@ -13,6 +16,11 @@ import {FriendshipModule} from "./friendship/friendship.module";
       isGlobal: true,
       envFilePath: '.env',
     }),
+    ServeStaticModule.forRoot({
+      rootPath: path.join(__dirname, '..', 'public'),
+      serveRoot: '/public',
+    }),
+    MailModule,
     AuthModule,
     UserModule,
     FriendshipModule,

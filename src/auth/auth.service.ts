@@ -6,6 +6,7 @@ import {RegisterDto} from "./dto/register.dto";
 import {LoginDto} from "./dto/login.dto";
 import {JwtService} from "@nestjs/jwt";
 import {ConfigService} from "@nestjs/config";
+import {User} from "@prisma/client";
 
 @Injectable({})
 export class AuthService {
@@ -15,7 +16,9 @@ export class AuthService {
         private config: ConfigService,
     ) {}
 
-    async register(dataDto: RegisterDto): Promise<{ success: boolean, message: string, data?: any }> {
+    async register(dataDto: RegisterDto):
+        Promise<{ success: boolean, message: string, data?: any }>
+    {
         try {
             const userWithEmail = await this.prisma.user.findUnique({
                 where: {email: dataDto.email}
@@ -52,7 +55,9 @@ export class AuthService {
         }
     }
 
-    async login(dataDto: LoginDto): Promise<{ success: boolean, message: string, data?: any }> {
+    async login(dataDto: LoginDto):
+        Promise<{ success: boolean, message: string, data?: any }>
+    {
         try {
             const user = await this.prisma.user.findUnique({
                 where: {email: dataDto.email}
@@ -87,7 +92,8 @@ export class AuthService {
         }
     }
 
-    jwtSign(userId: number, email: string): Promise<string> {
+    jwtSign(userId: number, email: string): Promise<string>
+    {
         const payload = {
             sub: userId,
             email,
@@ -99,6 +105,36 @@ export class AuthService {
         return this.jwtService.signAsync(payload, {
             secret: secret, // process.env.JWT_SECRET,
             expiresIn: expiresIn
+        });
+    }
+
+    async getUserByEmail(email: string): Promise<any>
+    {
+        return this.prisma.user.findUnique({
+            where: {email: email},
+            select: {id: true, email: true, name: true, createdAt: true, verification_code: true},
+        });
+    }
+
+    generateVerificationCode(): string {
+        const number = Math.floor(100000 + Math.random() * 900000);
+        return number.toString();
+    }
+
+    async saveVerificationCode(user: User, verification_code: string): Promise<void>
+    {
+        await this.prisma.user.update({
+            where: {id: user.id},
+            data: {verification_code},
+        });
+    }
+
+    async updatePassword(id: number, password: string): Promise<void>
+    {
+        const hashedPassword = await argon2.hash(password);
+        await this.prisma.user.update({
+            where: {id},
+            data: {hash: hashedPassword, verification_code: null},
         });
     }
 }

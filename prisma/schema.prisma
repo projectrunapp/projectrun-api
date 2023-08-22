@@ -8,19 +8,20 @@ datasource db {
 }
 
 model User {
-  id         Int          @id @default(autoincrement())
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-  email      String       @unique
-  hash       String
-  name       String
-  birth_date String?
-  gender     String
-  username   String       @unique
-  avatar     String?
-  received   Friendship[] @relation("Receiver")
-  sent       Friendship[] @relation("Sender")
-  runs       Run[]
+  id                Int          @id @default(autoincrement())
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  email             String       @unique
+  hash              String
+  verification_code String?
+  name              String
+  birth_date        String?
+  gender            String
+  username          String       @unique
+  avatar            String?
+  received          Friendship[] @relation("Receiver")
+  sent              Friendship[] @relation("Sender")
+  runs              Run[]
 
   @@map("users")
 }
