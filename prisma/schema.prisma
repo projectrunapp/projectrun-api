@@ -41,16 +41,17 @@ model Friendship {
 }
 
 model Run {
-  id              Int      @id @default(autoincrement())
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id              Int       @id @default(autoincrement())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
   title           String
   userId          Int
-  calories_burned Int      @default(0)
-  datetime_start  DateTime @default(now())
-  distance        Float    @default(0)
-  duration        Int      @default(0)
-  elevation_gain  Int      @default(0)
+  calories_burned Int       @default(0)
+  datetime_start  DateTime  @default(now())
+  datetime_end    DateTime?
+  distance        Float     @default(0)
+  duration        Int       @default(0)
+  elevation_gain  Int       @default(0)
   heart_rate_avg  Int?
   location_end    String?
   location_start  String?
@@ -59,7 +60,7 @@ model Run {
   temperature     Int?
   terrain         String
   weather         String
-  user            User     @relation(fields: [userId], references: [id])
+  user            User      @relation(fields: [userId], references: [id])
 
   @@map("runs")
 }
