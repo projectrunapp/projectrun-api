@@ -39,6 +39,7 @@ export class RunService {
         const where = {
             userId: id,
         };
+        // TODO: get as enum
         const intervalValues = ["WEEK", "MONTH", "LAST_3_MONTHS", "LAST_6_MONTHS", "LAST_YEAR"];
         if (interval && intervalValues.includes(interval)) {
             const date = new Date();
