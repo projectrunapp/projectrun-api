@@ -6,6 +6,7 @@ import {RegisterDto} from "./dto/register.dto";
 import {LoginDto} from "./dto/login.dto";
 import {JwtService} from "@nestjs/jwt";
 import {ConfigService} from "@nestjs/config";
+import {User} from "@prisma/client";
 
 @Injectable({})
 export class AuthService {
@@ -15,14 +16,22 @@ export class AuthService {
         private config: ConfigService,
     ) {}
 
-    async register(dataDto: RegisterDto) {
+    async register(dataDto: RegisterDto):
+        Promise<{ success: boolean, message: string, data?: any }>
+    {
         try {
-            const userExists = await this.prisma.user.findUnique({
+            const userWithEmail = await this.prisma.user.findUnique({
                 where: {email: dataDto.email}
             });
+            if (userWithEmail) {
+                return {success: false, message: "Email taken!"};
+            }
 
-            if (userExists) {
-                return {success: false, message: "User already exists!"};
+            const userWithUsername = await this.prisma.user.findUnique({
+                where: {username: dataDto.username},
+            });
+            if (userWithUsername) {
+                return {success: false, message: "Username taken!"};
             }
 
             const hashedPassword = await argon2.hash(dataDto.password);
@@ -30,23 +39,25 @@ export class AuthService {
             const user = await this.prisma.user.create({
                 data: {
                     name: dataDto.name,
+                    username: dataDto.username,
                     email: dataDto.email,
                     hash: hashedPassword,
+                    birth_date: dataDto.birth_date,
+                    gender: dataDto.gender,
                 },
                 select: {id: true, email: true, name: true, createdAt: true}
             });
 
-            return {
-                success: true,
-                message: "User created successfully!",
-            };
+            return {success: true, message: "User created successfully!"};
         } catch (err) {
             const message = (err.response && err.response.data.message) || err.message || err.toString();
             return {success: false, message};
         }
     }
 
-    async login(dataDto: LoginDto) {
+    async login(dataDto: LoginDto):
+        Promise<{ success: boolean, message: string, data?: any }>
+    {
         try {
             const user = await this.prisma.user.findUnique({
                 where: {email: dataDto.email}
@@ -81,7 +92,8 @@ export class AuthService {
         }
     }
 
-    jwtSign(userId: number, email: string): Promise<string> {
+    jwtSign(userId: number, email: string): Promise<string>
+    {
         const payload = {
             sub: userId,
             email,
@@ -93,6 +105,36 @@ export class AuthService {
         return this.jwtService.signAsync(payload, {
             secret: secret, // process.env.JWT_SECRET,
             expiresIn: expiresIn
+        });
+    }
+
+    async getUserByEmail(email: string): Promise<any>
+    {
+        return this.prisma.user.findUnique({
+            where: {email: email},
+            select: {id: true, email: true, name: true, createdAt: true, verification_code: true},
+        });
+    }
+
+    generateVerificationCode(): string {
+        const number = Math.floor(100000 + Math.random() * 900000);
+        return number.toString();
+    }
+
+    async saveVerificationCode(user: User, verification_code: string): Promise<void>
+    {
+        await this.prisma.user.update({
+            where: {id: user.id},
+            data: {verification_code},
+        });
+    }
+
+    async updatePassword(id: number, password: string): Promise<void>
+    {
+        const hashedPassword = await argon2.hash(password);
+        await this.prisma.user.update({
+            where: {id},
+            data: {hash: hashedPassword, verification_code: null},
         });
     }
 }

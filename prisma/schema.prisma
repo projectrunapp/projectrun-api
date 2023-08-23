@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,28 +8,65 @@ datasource db {
 }
 
 model User {
-  id        Int @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  email     String @unique
-  hash      String
-  name      String
-
-  runs Run[]
+  id                Int          @id @default(autoincrement())
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  email             String       @unique
+  hash              String
+  verification_code String?
+  name              String
+  birth_date        String?
+  gender            String
+  username          String       @unique
+  avatar            String?
+  received          Friendship[] @relation("Receiver")
+  sent              Friendship[] @relation("Sender")
+  runs              Run[]
 
   @@map("users")
 }
 
+model Friendship {
+  id         String                 @id @default(uuid())
+  status     EnumRelationshipStatus @default(PENDING)
+  senderId   Int
+  receiverId Int
+  not_seen   Boolean                @default(true)
+  createdAt  DateTime               @default(now())
+  updatedAt  DateTime               @updatedAt
+  receiver   User                   @relation("Receiver", fields: [receiverId], references: [id])
+  sender     User                   @relation("Sender", fields: [senderId], references: [id])
+
+  @@map("friendships")
+}
+
 model Run {
-  id        Int @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  title     String
-
-  userId    Int
-  user      User @relation(fields: [userId], references: [id])
+  id              Int       @id @default(autoincrement())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  title           String
+  userId          Int
+  calories_burned Int       @default(0)
+  datetime_start  DateTime  @default(now())
+  datetime_end    DateTime?
+  distance        Float     @default(0)
+  duration        Int       @default(0)
+  elevation_gain  Int       @default(0)
+  heart_rate_avg  Int?
+  location_end    String?
+  location_start  String?
+  notes           String?
+  pace_avg        Float?
+  temperature     Int?
+  terrain         String
+  weather         String
+  user            User      @relation(fields: [userId], references: [id])
 
   @@map("runs")
+}
+
+enum EnumRelationshipStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
 }
