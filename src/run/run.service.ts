@@ -35,11 +35,10 @@ export class RunService {
         });
     }
 
-    async getRuns(id: number, interval?: string): Promise<any> {
+    async getRuns(id: number, {interval, page, per_page, order}): Promise<any> {
         const where = {
-            id: id,
+            userId: id,
         };
-
         const intervalValues = ["WEEK", "MONTH", "LAST_3_MONTHS", "LAST_6_MONTHS", "LAST_YEAR"];
         if (interval && intervalValues.includes(interval)) {
             const date = new Date();
@@ -67,19 +66,33 @@ export class RunService {
             };
         }
 
-        return this.prisma.run.findMany({
+        const count = await this.prisma.run.count({
             where,
-            orderBy: {
-                createdAt: "desc",
-            },
-            select: {
-                id: true,
-                title: true,
-                distance: true,
-                pace_avg: true,
-                duration: true,
-            },
         });
+
+        if (count === 0) {
+            return {
+                total: 0,
+                pages: 0,
+                runs: [],
+            }
+        }
+
+        const runs = await this.prisma.run.findMany({
+            where,
+            orderBy: {createdAt: order},
+            select: {
+                id: true, title: true, distance: true, pace_avg: true, duration: true,
+            },
+            skip: (page - 1) * per_page,
+            take: per_page,
+        });
+
+        return {
+            total: count,
+            pages: Math.ceil(count / per_page),
+            runs,
+        }
     }
 
     async getActiveRun(id: number): Promise<any> {

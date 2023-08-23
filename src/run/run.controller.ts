@@ -17,15 +17,25 @@ export class RunController {
 
     @HttpCode(HttpStatus.OK)
     @Get('my-runs')
-    async getMyRuns(@GetUser() user: User, @Query() query: { interval?: string }):
-        Promise<{ success: boolean, message: string, data?: any[] }>
+    async getMyRuns(@GetUser() user: User, @Query() query: {
+        interval?: string,
+        page?: number,
+        per_page?: number,
+        order?: string,
+    }): Promise<{ success: boolean, message: string, data?: any[] }>
     {
-        const runs = await this.runService.getRuns(user.id, query.interval);
+        // TODO: validate query parameters
+        const paginationData = await this.runService.getRuns(user.id, {
+            interval: query.interval || "ALL",
+            page: query.page || 1,
+            per_page: query.per_page ? Math.min(query.per_page, 50) : 10,
+            order: query.order === "desc" ? "desc" : "asc",
+        });
 
         return {
             success: true,
             message: "Runs retrieved successfully.",
-            data: runs,
+            data: paginationData,
         };
     }
 
