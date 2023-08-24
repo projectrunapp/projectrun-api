@@ -1,14 +1,14 @@
 {
   "name": "projectrun-api",
   "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "description": "ProjectRun API",
+  "author": "BoolFalse",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
     "db:rm": "docker-compose rm -f -s -v db_service",
     "db:up": "docker-compose up -d db_service",
-    "db:migrate": "prisma migrate deploy",
+    "db:migrate": "npx prisma migrate deploy",
     "db:restart": "npm run db:rm && npm run db:up && sleep 1 && npm run db:migrate",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
