@@ -32,6 +32,8 @@ export class UserController {
         };
     }
 
+    // TODO: add myProfile endpoint
+
     @HttpCode(HttpStatus.OK)
     @Get('search')
     async search(@GetUser() user: User, @Query() query: { term: string }):
