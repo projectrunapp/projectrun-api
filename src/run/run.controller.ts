@@ -39,6 +39,8 @@ export class RunController {
         };
     }
 
+    // TODO: add mySingleRun endpoint
+
     @HttpCode(HttpStatus.OK)
     @Delete('delete/:runId')
     async deleteRun(@GetUser() user: User, @Param('runId', ParseIntPipe) runId: number):

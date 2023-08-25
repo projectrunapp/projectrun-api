@@ -4,9 +4,9 @@ import {ConfigService} from "@nestjs/config";
 export default (email: string, name: string, verification_code: string) => {
     const config = new ConfigService();
 
-    const app_site = config.get<string>('SERVER_URL');
+    const app_site = config.get<string>('SERVER_HOST');
     const app_name = config.get<string>('APP_NAME');
-    const app_logo = config.get<string>('SERVER_URL') + "/public/logo-192x192.png";
+    const app_logo = config.get<string>('SERVER_HOST') + "/public/logo-192x192.png";
     const year = new Date().getFullYear();
 
     return `<div style="background-color:#ffffff;margin:0!important;padding:0!important">
