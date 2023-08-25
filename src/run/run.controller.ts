@@ -39,7 +39,22 @@ export class RunController {
         };
     }
 
-    // TODO: add mySingleRun endpoint
+    @HttpCode(HttpStatus.OK)
+    @Get('my-runs/:runId')
+    async getMyRun(@GetUser() user: User, @Param('runId', ParseIntPipe) runId: number):
+        Promise<{ success: boolean, message: string, data?: any }>
+    {
+        const run = await this.runService.getRun(user.id, runId);
+        if (!run) {
+            return {success: false, message: "Run not found!"};
+        }
+
+        return {
+            success: true,
+            message: "Run retrieved successfully.",
+            data: run,
+        };
+    }
 
     @HttpCode(HttpStatus.OK)
     @Delete('delete/:runId')
