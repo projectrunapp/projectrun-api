@@ -17,7 +17,7 @@ export class FriendshipService {
             where: {
                 receiverId: id,
                 status: 'PENDING',
-                not_seen: notSeen,
+                // ...(notSeen && {not_seen: true}), // TODO: Review: `not_seen` logic disabled for now
             },
             select: {
                 id: true,
