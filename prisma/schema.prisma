@@ -31,7 +31,6 @@ model Friendship {
   status     EnumRelationshipStatus @default(PENDING)
   senderId   Int
   receiverId Int
-  not_seen   Boolean                @default(true)
   createdAt  DateTime               @default(now())
   updatedAt  DateTime               @updatedAt
   receiver   User                   @relation("Receiver", fields: [receiverId], references: [id])

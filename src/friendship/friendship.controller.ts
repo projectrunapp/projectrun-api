@@ -27,7 +27,7 @@ export class FriendshipController {
     async getFriendRequests(@GetUser() user: User, @Query() query: { filter?: string }):
         Promise<{ success: boolean, message: string, data?: any[] }>
     {
-        const friendRequests = await this.friendshipService.getFriendRequests(user.id, query.filter === 'not_seen');
+        const friendRequests = await this.friendshipService.getFriendRequests(user.id, query.filter);
 
         return {
             success: true,

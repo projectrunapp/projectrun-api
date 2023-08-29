@@ -7,7 +7,6 @@ CREATE TABLE "friendships" (
     "status" "EnumRelationshipStatus" NOT NULL DEFAULT 'PENDING',
     "senderId" INTEGER NOT NULL,
     "receiverId" INTEGER NOT NULL,
-    "not_seen" BOOLEAN NOT NULL DEFAULT true,
 
     CONSTRAINT "friendships_pkey" PRIMARY KEY ("id")
 );
