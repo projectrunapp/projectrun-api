@@ -32,7 +32,11 @@ cd projectrun-api/ && npm install
 
 - Create `.env` file and fill the environment variables.
 
-- Custom command to restart the db container (if it does exist) and apply migrations (see `package.json`):
+- Custom command to:
+  1. remove db_service container: `docker-compose rm -f -s -v db_service`
+  2. run the db_service container: `docker-compose up -d db_service`
+  3. apply migrations: `npx prisma migrate deploy`
+  4. run the seeders: `ts-node src/seed.ts` (custom command)
 ```bash
 npm run db:restart
 ```
