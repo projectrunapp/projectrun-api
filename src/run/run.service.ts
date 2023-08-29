@@ -81,7 +81,7 @@ export class RunService {
 
         const runs = await this.prisma.run.findMany({
             where,
-            orderBy: {createdAt: order},
+            orderBy: {id: order}, // createdAt
             select: {
                 id: true, title: true, distance: true, pace_avg: true, duration: true,
             },

@@ -44,11 +44,8 @@ export class UserService {
                 ],
             },
             select: {
-                id: true,
-                createdAt: true,
-                name: true,
-                username: true,
-                email: true,
+                id: true, createdAt: true,
+                name: true, username: true, email: true,
             },
         });
     }

@@ -36,7 +36,7 @@ cd projectrun-api/ && npm install
   1. remove db_service container: `docker-compose rm -f -s -v db_service`
   2. run the db_service container: `docker-compose up -d db_service`
   3. apply migrations: `npx prisma migrate deploy`
-  4. run the seeders: `ts-node src/seed.ts` (custom command)
+  4. run the seeders: `ts-node prisma/seed.ts` (custom command)
 ```bash
 npm run db:restart
 ```
