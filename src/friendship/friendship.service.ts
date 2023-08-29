@@ -15,7 +15,7 @@ export class FriendshipService {
     async getFriendRequests(id: number, filter: string): Promise<any> {
         return this.prisma.friendship.findMany({
             where: {
-                receiverId: id,
+                [filter === 'sent' ? 'senderId' : 'receiverId']: id, // received or sent (default: received)
                 status: 'PENDING',
             },
             select: {

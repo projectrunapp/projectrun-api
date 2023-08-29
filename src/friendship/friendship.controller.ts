@@ -23,11 +23,12 @@ export class FriendshipController {
     constructor(private readonly friendshipService: FriendshipService) {}
 
     @HttpCode(HttpStatus.OK)
-    @Get('get-friend-requests')
+    @Get('get-friend-requests') // received or sent (default: received)
     async getFriendRequests(@GetUser() user: User, @Query() query: { filter?: string }):
         Promise<{ success: boolean, message: string, data?: any[] }>
     {
-        const friendRequests = await this.friendshipService.getFriendRequests(user.id, query.filter);
+        const filter = query.filter === 'sent' ? 'sent' : 'received';
+        const friendRequests = await this.friendshipService.getFriendRequests(user.id, filter);
 
         return {
             success: true,
@@ -65,7 +66,13 @@ export class FriendshipController {
         }
 
         const relationship = await this.friendshipService.getRelationship(user.id, receiverId);
-        if (relationship) {
+        if (relationship.status === EnumRelationshipStatus.PENDING) {
+            if (relationship.senderId === user.id) {
+                return {success: false, message: "You have already sent a friend request to this user!"};
+            } else {
+                return {success: false, message: "This user has already sent you a friend request!"};
+            }
+        } else if (relationship.status === EnumRelationshipStatus.ACCEPTED) {
             return {success: false, message: "You are already friends with this user!"};
         }
 
@@ -115,6 +122,8 @@ export class FriendshipController {
         const relationship = await this.friendshipService.getRelationship(user.id, senderId);
         if (!relationship || relationship.status !== EnumRelationshipStatus.PENDING) {
             return {success: false, message: "You are not friends with this user!"};
+        } else if (relationship.senderId !== senderId) {
+            return {success: false, message: "You cannot accept a friend request that you sent!"};
         }
 
         await this.friendshipService.acceptFriendRequest(user.id, senderId);
