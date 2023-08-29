@@ -7,7 +7,7 @@ import {ConfigService} from "@nestjs/config";
 export class PrismaService extends PrismaClient {
     constructor(config: ConfigService) {
         super({
-            log: ['query', 'info', 'warn'],
+            // log: ['query', 'info', 'warn'],
             datasources: {
                 db: {
                     url: config.get('DB_URL') // process.env.DB_URL,
