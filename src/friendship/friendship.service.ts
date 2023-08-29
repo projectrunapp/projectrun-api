@@ -12,12 +12,11 @@ export class FriendshipService {
         });
     }
 
-    async getFriendRequests(id: number, notSeen: boolean): Promise<any> {
+    async getFriendRequests(id: number, filter: string): Promise<any> {
         return this.prisma.friendship.findMany({
             where: {
-                receiverId: id,
+                [filter === 'sent' ? 'senderId' : 'receiverId']: id, // received or sent (default: received)
                 status: 'PENDING',
-                // ...(notSeen && {not_seen: true}), // TODO: Review: `not_seen` logic disabled for now
             },
             select: {
                 id: true,
