@@ -36,9 +36,23 @@ async function connect() {
 }
 
 async function createUsers(prismaClient: PrismaClient): Promise<any> {
-    const hashedPassword = await argon2.hash('password');
+    const hashedPassword = await argon2.hash(process.env.DEV_USER_PASSWORD || 'password');
+
     const users = [];
-    for (let i = 0; i < usersCount; i++) {
+    users.push({
+        hash: hashedPassword,
+        name: process.env.DEV_USER_NAME || 'User 1',
+        email: process.env.DEV_USER_EMAIL || 'user1@gmail.com',
+        username: process.env.DEV_USER_USERNAME || 'user1',
+        birth_date: faker.date.birthdate({
+            mode: 'year',
+            min: userMinBirthYear,
+            max: userMaxBirthYear,
+        }).toISOString().substring(0, 10),
+        gender: faker.helpers.arrayElement(['unknown', 'male', 'female', 'other']),
+    });
+
+    for (let i = 1; i < usersCount; i++) {
         const firstName = faker.person.firstName();
         const lastName = faker.person.lastName();
         const username = faker.internet.userName({firstName, lastName});
@@ -83,8 +97,8 @@ async function createFriendships(prismaClient: PrismaClient): Promise<any> {
     let pendingFriendshipsCount = 0;
     let acceptedFriendshipsCount = 0;
     for (let senderId = 1; senderId < usersCount; senderId++) {
-        for (let receiverId = senderId + 1; receiverId <= usersCount; receiverId++) {
-            if (faker.datatype.boolean(0.3)) {
+        for (let receiverId = 1; receiverId <= usersCount; receiverId++) {
+            if (senderId !== receiverId && faker.datatype.boolean(0.3)) {
                 const friendshipStatus = faker.helpers.arrayElement([
                     EnumRelationshipStatus.PENDING,
                     EnumRelationshipStatus.ACCEPTED,
@@ -97,7 +111,8 @@ async function createFriendships(prismaClient: PrismaClient): Promise<any> {
                 }
 
                 friendships.push({
-                    senderId, receiverId,
+                    senderId,
+                    receiverId,
                     status: friendshipStatus,
                 });
             }
