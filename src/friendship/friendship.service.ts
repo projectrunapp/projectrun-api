@@ -12,6 +12,44 @@ export class FriendshipService {
         });
     }
 
+    async getFriends(id: number): Promise<any> {
+        return this.prisma.friendship.findMany({
+            where: {
+                OR: [{
+                    senderId: id,
+                    status: 'ACCEPTED',
+                }, {
+                    receiverId: id,
+                    status: 'ACCEPTED',
+                }],
+            },
+            select: {
+                id: true,
+                status: true,
+                sender: {
+                    select: {id: true, name: true, email: true, username: true},
+                },
+                receiver: {
+                    select: {id: true, name: true, email: true, username: true},
+                },
+            },
+        });
+    }
+
+    async getRelationship(senderId: number, receiverId: number): Promise<any> {
+        return this.prisma.friendship.findFirst({
+            where: {
+                OR: [{
+                    senderId,
+                    receiverId,
+                }, {
+                    senderId: receiverId,
+                    receiverId: senderId,
+                }],
+            },
+        });
+    }
+
     async getFriendRequests(id: number, filter: string): Promise<any> {
         return this.prisma.friendship.findMany({
             where: {
@@ -21,65 +59,9 @@ export class FriendshipService {
             select: {
                 id: true,
                 status: true,
-                sender: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                    },
+                [filter === 'sent' ? 'receiver' : 'sender']: {
+                    select: {id: true, name: true, email: true, username: true}
                 },
-            },
-        });
-    }
-
-    async getFriends(id: number): Promise<any> {
-        return this.prisma.friendship.findMany({
-            where: {
-                OR: [
-                    {
-                        senderId: id,
-                        status: 'ACCEPTED',
-                    },
-                    {
-                        receiverId: id,
-                        status: 'ACCEPTED',
-                    },
-                ],
-            },
-            select: {
-                id: true,
-                status: true,
-                sender: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                    },
-                },
-                receiver: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                    },
-                },
-            },
-        });
-    }
-
-    async getRelationship(senderId: number, receiverId: number): Promise<any> {
-        return this.prisma.friendship.findFirst({
-            where: {
-                OR: [
-                    {
-                        senderId,
-                        receiverId,
-                    },
-                    {
-                        senderId: receiverId,
-                        receiverId: senderId,
-                    },
-                ],
             },
         });
     }
@@ -97,16 +79,13 @@ export class FriendshipService {
     async cancelFriendRequest(senderId: number, receiverId: number): Promise<any> {
         return this.prisma.friendship.deleteMany({
             where: {
-                OR: [
-                    {
-                        senderId,
-                        receiverId,
-                    },
-                    {
-                        senderId: receiverId,
-                        receiverId: senderId,
-                    },
-                ],
+                OR: [{
+                    senderId,
+                    receiverId,
+                }, {
+                    senderId: receiverId,
+                    receiverId: senderId,
+                }],
             },
         });
     }
@@ -114,16 +93,13 @@ export class FriendshipService {
     async acceptFriendRequest(senderId: number, receiverId: number): Promise<any> {
         return this.prisma.friendship.updateMany({
             where: {
-                OR: [
-                    {
-                        senderId,
-                        receiverId,
-                    },
-                    {
-                        senderId: receiverId,
-                        receiverId: senderId,
-                    },
-                ],
+                OR: [{
+                    senderId,
+                    receiverId,
+                }, {
+                    senderId: receiverId,
+                    receiverId: senderId,
+                }],
             },
             data: {
                 status: 'ACCEPTED',
@@ -134,16 +110,13 @@ export class FriendshipService {
     async declineFriendRequest(senderId: number, receiverId: number): Promise<any> {
         return this.prisma.friendship.deleteMany({
             where: {
-                OR: [
-                    {
-                        senderId,
-                        receiverId,
-                    },
-                    {
-                        senderId: receiverId,
-                        receiverId: senderId,
-                    },
-                ],
+                OR: [{
+                    senderId,
+                    receiverId,
+                }, {
+                    senderId: receiverId,
+                    receiverId: senderId,
+                }],
             },
         });
     }
@@ -151,16 +124,42 @@ export class FriendshipService {
     async removeFriend(senderId: number, receiverId: number): Promise<any> {
         return this.prisma.friendship.deleteMany({
             where: {
-                OR: [
-                    {
-                        senderId,
-                        receiverId,
-                    },
-                    {
-                        senderId: receiverId,
-                        receiverId: senderId,
-                    },
-                ],
+                OR: [{
+                    senderId,
+                    receiverId,
+                }, {
+                    senderId: receiverId,
+                    receiverId: senderId,
+                }],
+            },
+        });
+    }
+
+    async search(authUserId: number, term: string): Promise<any> {
+        return this.prisma.user.findMany({
+            where: {
+                id: {not: authUserId},
+                OR: [{
+                    name: {contains: term, mode: 'insensitive'},
+                }, {
+                    username: {contains: term, mode: 'insensitive'}
+                }, {
+                    email: {contains: term, mode: 'insensitive'}
+                }],
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                username: true,
+                sent: {
+                    select: {id: true, status: true, senderId: true, receiverId: true},
+                    where: {receiverId: authUserId},
+                },
+                received: {
+                    select: {id: true, status: true, senderId: true, receiverId: true},
+                    where: {senderId: authUserId},
+                },
             },
         });
     }
