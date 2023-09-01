@@ -45,7 +45,7 @@ export class AuthService {
                     birth_date: dataDto.birth_date,
                     gender: dataDto.gender,
                 },
-                select: {id: true, email: true, name: true, createdAt: true}
+                select: {id: true, email: true, name: true, username: true, createdAt: true}
             });
 
             return {success: true, message: "User created successfully!"};
@@ -112,7 +112,7 @@ export class AuthService {
     {
         return this.prisma.user.findUnique({
             where: {email: email},
-            select: {id: true, email: true, name: true, createdAt: true, verification_code: true},
+            select: {id: true, email: true, name: true, username: true, createdAt: true, verification_code: true},
         });
     }
 

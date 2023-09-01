@@ -178,4 +178,22 @@ export class FriendshipController {
 
         return {success: true, message: "Unfriended successfully."}
     }
+
+    @HttpCode(HttpStatus.OK)
+    @Get('search')
+    async search(@GetUser() user: User, @Query() query: { term: string }):
+        Promise<{ success: boolean, message: string, data?: User[] }>
+    {
+        if (!query.term || query.term.length < 3) {
+            return {success: false, message: "Search term must be at least 3 characters long!"};
+        }
+
+        const users = await this.friendshipService.search(user.id, query.term);
+
+        return {
+            success: true,
+            message: "Users found successfully.",
+            data: users,
+        };
+    }
 }

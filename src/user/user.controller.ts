@@ -4,7 +4,7 @@ import {
     HttpCode, HttpStatus,
     Controller, UseGuards,
     Get, Put,
-    Query, UseInterceptors, UploadedFile,
+    UseInterceptors, UploadedFile,
 } from '@nestjs/common';
 import {JwtGuard} from "../auth/jwt.guard";
 import {GetUser} from "../auth/get-user.decorator";
@@ -33,24 +33,6 @@ export class UserController {
     }
 
     // TODO: add myProfile endpoint
-
-    @HttpCode(HttpStatus.OK)
-    @Get('search')
-    async search(@GetUser() user: User, @Query() query: { term: string }):
-        Promise<{ success: boolean, message: string, data?: User[] }>
-    {
-        if (!query.term || query.term.length < 3) {
-            return {success: false, message: "Search term must be at least 3 characters long."};
-        }
-
-        const users = await this.userService.search(user.id, query.term);
-
-        return {
-            success: true,
-            message: "Users found successfully.",
-            data: users,
-        };
-    }
 
     @HttpCode(HttpStatus.OK)
     @Get('profile/:id')
