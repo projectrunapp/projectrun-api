@@ -40,29 +40,39 @@ model Friendship {
 }
 
 model Run {
-  id              Int       @id @default(autoincrement())
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  title           String
-  userId          Int
-  calories_burned Int       @default(0)
-  datetime_start  DateTime  @default(now())
-  datetime_end    DateTime?
-  distance        Float     @default(0)
-  duration        Int       @default(0)
-  elevation_gain  Int       @default(0)
-  heart_rate_avg  Int?
-  location_end    String?
-  location_start  String?
-  notes           String?
-  pace_avg        Float?
-  temperature     Int?
-  terrain         String
-  weather         String
-  user            User      @relation(fields: [userId], references: [id])
+  id                        Int      @id @default(autoincrement())
+  userId                    Int
+  user                      User     @relation(fields: [userId], references: [id])
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+  calories_burned           Int      @default(0)
+  elevation_gain            Int      @default(0)
+  heart_rate_avg            Int?
+  temperature               Int?
+  terrain                   String?
+  weather                   String?
+  notes                     String?
+  title                     String
+  started_at                DateTime
+  completed_at              DateTime
+  coordinates_count         Int
+  first_coordinate_lat      Float
+  first_coordinate_lng      Float
+  last_coordinate_lat       Float
+  last_coordinate_lng       Float
+  pauses_count              Int
+  distance                  Int
+  distance_pauses_included  Int
+  duration                  Int
+  duration_pauses_included  Int
+  avg_speed                 Float
+  avg_speed_pauses_included Float
+  coordinates               String // TODO: use JSON
 
   @@map("runs")
 }
+
+// TODO: set all the necessary Enums
 
 enum EnumRelationshipStatus {
   PENDING

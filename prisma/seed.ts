@@ -35,6 +35,23 @@ async function connect() {
     }
 }
 
+async function checkIfTableExists(prismaClient: PrismaClient, tableName: string): Promise<unknown> {
+    try {
+        const tableExists = await prismaClient.$queryRaw`
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE  table_schema = 'public'
+                AND    table_name   = '${tableName}'
+            );
+        `;
+
+        return tableExists;
+    } catch (err) {
+        console.log(err);
+        return false;
+    }
+}
+
 async function createUsers(prismaClient: PrismaClient): Promise<any> {
     const hashedPassword = await argon2.hash(process.env.DEV_USER_PASSWORD || 'password');
 
@@ -152,24 +169,6 @@ async function createRuns(prismaClient: PrismaClient): Promise<any> {
         });
 
         for (let i = 0; i < userRunsCount; i++) {
-            const runSeconds = faker.number.int({
-                min: userRunsCount > 10 ? 10 * userShortestRunInMinutes * 60 : userShortestRunInMinutes * 60,
-                max: userLongestRunInMinutes * 60 * 60
-            }); // 1|10 minutes to 5 hours
-            const datetimeStart = runningDates[i];
-
-            const runMinutes = Math.floor(runSeconds / 60);
-            const datetimeEnd = new Date(datetimeStart.getTime() + runSeconds * 1000);
-            const averageSpeed = faker.number.int({
-                min: 100,
-                max: 150 - (runMinutes > 60 ? 20 : 0)
-            }); // meters per minute
-            const distance = runMinutes * averageSpeed;
-            const elevationGain = faker.number.int({
-                min: -1 * distance / 100,
-                max: distance / 100
-            }); // meters
-
             const dateHour = runningDates[i].getHours();
             let title = "";
             if (dateHour >= 6 && dateHour < 12) {
@@ -182,26 +181,46 @@ async function createRuns(prismaClient: PrismaClient): Promise<any> {
                 title = "Night Run";
             }
 
-            const coordinatesPair = generateCoordinates(coordinatesRectangle);
+            const coordinatesRectangle = {
+                topLeft: { lat: 44.662052, lng: -114.447634 },
+                topRight: { lat: 44.270990, lng: -89.847386 },
+                bottomLeft: { lat: 35.030414, lng: -115.735263 },
+                bottomRight: { lat: 34.999016, lng: -91.073858 },
+            };
+            const numCoordinatesToGenerate = 100;
+            const maxDistanceBetweenCoordinates = 100; // In meters
+
+            const generatedCoordinates = generateCoordinatesInSequence(
+                coordinatesRectangle,
+                numCoordinatesToGenerate,
+                maxDistanceBetweenCoordinates
+            );
 
             userRuns.push({
                 userId,
+                // calories_burned: Math.floor(runMinutes * 11.4), // ~11.4 calories per minute
+                // elevation_gain: faker.number.int({min: -100, max: 100}),
+                // heart_rate_avg: faker.number.int({min: 60, max: 200}),
+                // temperature: faker.number.int({min: 10, max: 30}), // Celsius
+                // terrain: faker.helpers.arrayElement(['unknown', 'road', 'trail', 'track']),
+                // weather: faker.helpers.arrayElement(['unknown', 'sunny', 'cloudy', 'rainy', 'snowy', 'windy']),
+                // notes: faker.lorem.sentence(),
                 title: title,
-                calories_burned: Math.floor(runMinutes * 11.4), // ~11.4 calories per minute
-                datetime_start: datetimeStart,
-                datetime_end: datetimeEnd,
-                distance: distance, // ~120 meters per minute
-                duration: runSeconds,
-                elevation_gain: elevationGain,
-                // heart_rate_avg: null,
-                location_start: `${coordinatesPair.start.lat},${coordinatesPair.start.lng}`,
-                location_end: `${coordinatesPair.end.lat},${coordinatesPair.end.lng}`,
-                notes: faker.lorem.sentence(),
-                pace_avg: Math.floor(averageSpeed / 60), // minutes per kilometer
-                temperature: faker.number.int({min: 10, max: 30}),
-                // TODO: set all the Enums on prisma schema
-                terrain: faker.helpers.arrayElement(['unknown', 'road', 'trail', 'track']),
-                weather: faker.helpers.arrayElement(['unknown', 'sunny', 'cloudy', 'rainy', 'snowy', 'windy']),
+                started_at: new Date(generatedCoordinates[0].timestamp * 1000),
+                completed_at: new Date(generatedCoordinates[generatedCoordinates.length - 1].timestamp * 1000),
+                coordinates_count: generatedCoordinates.length,
+                first_coordinate_lat: parseFloat(generatedCoordinates[0].lat),
+                first_coordinate_lng: parseFloat(generatedCoordinates[0].lng),
+                last_coordinate_lat: parseFloat(generatedCoordinates[generatedCoordinates.length - 1].lat),
+                last_coordinate_lng: parseFloat(generatedCoordinates[generatedCoordinates.length - 1].lng),
+                pauses_count: 0,
+                distance: generatedCoordinates[generatedCoordinates.length - 1].distance_total,
+                distance_pauses_included: generatedCoordinates[generatedCoordinates.length - 1].distance_total,
+                duration: generatedCoordinates[generatedCoordinates.length - 1].duration_total,
+                duration_pauses_included: generatedCoordinates[generatedCoordinates.length - 1].duration_total,
+                avg_speed: generatedCoordinates[generatedCoordinates.length - 1].avg_speed_total,
+                avg_speed_pauses_included: generatedCoordinates[generatedCoordinates.length - 1].avg_speed_total,
+                coordinates: JSON.stringify(generatedCoordinates),
             });
         }
 
@@ -217,6 +236,12 @@ async function createRuns(prismaClient: PrismaClient): Promise<any> {
 }
 
 connect().then(async (prismaClient) => {
+    const usersTableExists = await checkIfTableExists(prismaClient, 'users');
+    if (!usersTableExists) {
+        console.log('\x1b[31m%s\x1b[0m:', "No seed data was added!");
+        process.exit(1);
+    }
+
     await createUsers(prismaClient);
     await createFriendships(prismaClient);
     await createRuns(prismaClient);
@@ -229,55 +254,107 @@ connect().then(async (prismaClient) => {
     process.exit(1);
 });
 
-// haversine formula
-function calculateDistance(location1: { lat: number, lng: number}, location2: { lat: number, lng: number}) {
-    const earthRadius = 6371000; // meters
-    const dLat = (location2.lat - location1.lat) * (Math.PI / 180);
-    const dLng = (location2.lng - location1.lng) * (Math.PI / 180);
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(location1.lat * (Math.PI / 180)) * Math.cos(location2.lat * (Math.PI / 180)) *
+
+
+// Function to generate a random coordinate within the given rectangle
+function getRandomCoordinateInRectangle(rectangle) {
+    const randomLat = Math.random() * (rectangle.topLeft.lat - rectangle.bottomLeft.lat) + rectangle.bottomLeft.lat;
+    const randomLng = Math.random() * (rectangle.topRight.lng - rectangle.topLeft.lng) + rectangle.topLeft.lng;
+    return { lat: randomLat, lng: randomLng };
+}
+
+// Function to calculate the distance between two coordinates using the Haversine formula
+function calculateDistance(lat1, lng1, lat2, lng2) {
+    const earthRadius = 6371000; // Radius of the Earth in meters
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLng = (lng2 - lng1) * (Math.PI / 180);
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
         Math.sin(dLng / 2) * Math.sin(dLng / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = earthRadius * c;
-
-    return distance;
+    return earthRadius * c;
 }
-function getRandomCoordinate(min: number, max: number) {
-    const randomCoordinate = (Math.random() * (max - min) + min).toFixed(6);
-    return randomCoordinate.padEnd(12, '0'); // Pad with zeros to have a total length of 12 characters
-}
-function generateRandomLocation(rectangleCoordinates: {
-    topLeft: { lat: number, lng: number },
-    topRight: { lat: number, lng: number },
-    bottomLeft: { lat: number, lng: number },
-    bottomRight: { lat: number, lng: number },
-}) {
-    const latMin = Math.min(rectangleCoordinates.topLeft.lat, rectangleCoordinates.bottomLeft.lat);
-    const latMax = Math.max(rectangleCoordinates.topRight.lat, rectangleCoordinates.bottomRight.lat);
-    const lngMin = Math.min(rectangleCoordinates.topLeft.lng, rectangleCoordinates.topRight.lng);
-    const lngMax = Math.max(rectangleCoordinates.bottomLeft.lng, rectangleCoordinates.bottomRight.lng);
 
-    const randomLat = getRandomCoordinate(latMin, latMax);
-    const randomLng = getRandomCoordinate(lngMin, lngMax);
+// Function to generate a new coordinate within a given meters of the given coordinate
+function generateRandomCoordinateWithinRadius(coordinate, maxDistance) {
+    const randomDistance = Math.random() * maxDistance;
+    const randomAngle = Math.random() * 2 * Math.PI;
 
-    return { lat: parseFloat(randomLat), lng: parseFloat(randomLng) };
-}
-function generateCoordinates(mapsRectangleCoordinates: {
-    topLeft: { lat: number, lng: number },
-    topRight: { lat: number, lng: number },
-    bottomLeft: { lat: number, lng: number },
-    bottomRight: { lat: number, lng: number },
-}) {
-    let location1: {lat: number, lng: number}, location2: {lat: number, lng: number}, distance: number;
-    do {
-        location1 = generateRandomLocation(mapsRectangleCoordinates);
-        location2 = generateRandomLocation(mapsRectangleCoordinates);
-        distance = calculateDistance(location1, location2);
-    } while (distance > 10000);
+    // Convert distance to latitude and longitude offsets
+    const latOffset = (randomDistance / 6371000) * (180 / Math.PI);
+    const lngOffset = (randomDistance / 6371000) * (180 / Math.PI) / Math.cos(coordinate.lat * (Math.PI / 180));
 
-    return {
-        start: location1,
-        end: location2,
-        distance: distance,
-    };
+    // Calculate the new coordinates
+    const newLat = coordinate.lat + latOffset;
+    const newLng = coordinate.lng + lngOffset;
+
+    return { lat: newLat, lng: newLng };
 }
+
+// Function to generate a sequence of coordinates within the given rectangle
+function generateCoordinatesInSequence(rectangle, numCoordinates, maxDistanceBetweenCoordinates) {
+    const coordinates = [];
+    let currentCoordinate = getRandomCoordinateInRectangle(rectangle);
+    const randomDate = new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000);
+    const timestamp = randomDate.getTime();
+
+    coordinates.push({
+        lat: currentCoordinate.lat.toFixed(7),
+        lng: currentCoordinate.lng.toFixed(7),
+        timestamp: Math.round(timestamp / 1000),
+        distance_piece: 0,
+        distance_total: 0,
+        duration_piece: 0,
+        duration_total: 0,
+        avg_speed_piece: 0,
+        avg_speed_total: 0,
+    });
+
+    for (let i = 1; i < numCoordinates; i++) {
+        const newCoordinate = generateRandomCoordinateWithinRadius(currentCoordinate, maxDistanceBetweenCoordinates);
+        const distance = calculateDistance(currentCoordinate.lat, currentCoordinate.lng, newCoordinate.lat, newCoordinate.lng);
+        const duration_piece = Math.random() * 10 + 10; // Random duration between 10 and 20 seconds
+
+        const timestamp = coordinates[i - 1].timestamp * 1000 + duration_piece * 1000;
+        const distance_piece = distance;
+        const distance_total = coordinates[i - 1].distance_total + distance_piece;
+        const duration_total = coordinates[i - 1].duration_total + duration_piece;
+        const avg_speed_piece = distance_piece / duration_piece;
+        const avg_speed_total = distance_total / duration_total;
+
+        coordinates.push({
+            lat: newCoordinate.lat.toFixed(7),
+            lng: newCoordinate.lng.toFixed(7),
+            timestamp: Math.round(timestamp / 1000),
+            distance_piece: Math.round(distance_piece),
+            distance_total: Math.round(distance_total),
+            duration_piece: Math.round(duration_piece),
+            duration_total: Math.round(duration_total),
+            avg_speed_piece: Math.round(avg_speed_piece * 100) / 100,
+            avg_speed_total: Math.round(avg_speed_total * 100) / 100,
+        });
+
+        currentCoordinate = newCoordinate;
+    }
+
+    return coordinates;
+}
+
+// function generateCoordinatesInSequence(rectangle, numCoordinates, maxDistanceBetweenCoordinates) {
+//     const coordinates = [];
+//     let currentCoordinate = getRandomCoordinateInRectangle(rectangle);
+//     coordinates.push(currentCoordinate);
+//
+//     for (let i = 1; i < numCoordinates; i++) {
+//         let newCoordinate;
+//         do {
+//             newCoordinate = generateRandomCoordinateWithinRadius(currentCoordinate, maxDistanceBetweenCoordinates);
+//         } while (calculateDistance(currentCoordinate.lat, currentCoordinate.lng, newCoordinate.lat, newCoordinate.lng) > maxDistanceBetweenCoordinates);
+//
+//         coordinates.push(newCoordinate);
+//         currentCoordinate = newCoordinate;
+//     }
+//
+//     return coordinates;
+// }

@@ -66,14 +66,16 @@ export class FriendshipController {
         }
 
         const relationship = await this.friendshipService.getRelationship(user.id, receiverId);
-        if (relationship.status === EnumRelationshipStatus.PENDING) {
-            if (relationship.senderId === user.id) {
-                return {success: false, message: "You have already sent a friend request to this user!"};
-            } else {
-                return {success: false, message: "This user has already sent you a friend request!"};
+        if (relationship) {
+            if (relationship.status === EnumRelationshipStatus.PENDING) {
+                if (relationship.senderId === user.id) { // user sent the friend request
+                    return {success: false, message: "You have already sent a friend request to this user!"};
+                } else { // user received the friend request
+                    return {success: false, message: "This user has already sent you a friend request!"};
+                }
+            } else if (relationship.status === EnumRelationshipStatus.ACCEPTED) {
+                return {success: false, message: "You are already friends with this user!"};
             }
-        } else if (relationship.status === EnumRelationshipStatus.ACCEPTED) {
-            return {success: false, message: "You are already friends with this user!"};
         }
 
         await this.friendshipService.sendFriendRequest(user.id, receiverId);
