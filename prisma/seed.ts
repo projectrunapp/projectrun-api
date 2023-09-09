@@ -72,10 +72,19 @@ async function createUsers(prismaClient: PrismaClient): Promise<any> {
     for (let i = 1; i < usersCount; i++) {
         const firstName = faker.person.firstName();
         const lastName = faker.person.lastName();
-        const username = faker.internet.userName({firstName, lastName});
+        const usernameNonFiltered = faker.internet.userName({firstName, lastName});
+        const username = usernameNonFiltered.toLowerCase().replace(/[^a-zA-Z0-9_]/g, '');
         const emailParts = faker.internet.email({firstName, lastName}).split('@');
         const emailLocalPart = emailParts[0].replace(/[^a-zA-Z0-9.]/g, '');
         const email = emailLocalPart.toLowerCase() + '@' + emailParts[1];
+
+        const userWithEmailOrUsername = await prismaClient.user.findFirst({
+            where: {OR: [{username}, {email}]}
+        });
+        if (userWithEmailOrUsername) {
+            i--;
+            continue;
+        }
 
         users.push({
             hash: hashedPassword,
@@ -247,7 +256,7 @@ connect().then(async (prismaClient) => {
     await createRuns(prismaClient);
 
     console.log();
-    console.log('\x1b[32m%s\x1b[0m:', "Seeding completed successfully!");
+    console.log('\x1b[32m%s\x1b[0m:', "Seeding completed successfully");
     process.exit(0);
 }).catch(err => {
     console.log(err);
