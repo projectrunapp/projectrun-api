@@ -48,7 +48,7 @@ export class AuthService {
                 select: {id: true, email: true, name: true, username: true, createdAt: true}
             });
 
-            return {success: true, message: "User created successfully!"};
+            return {success: true, message: "User created successfully."};
         } catch (err) {
             const message = (err.response && err.response.data.message) || err.message || err.toString();
             return {success: false, message};
@@ -60,7 +60,11 @@ export class AuthService {
     {
         try {
             const user = await this.prisma.user.findUnique({
-                where: {email: dataDto.email}
+                where: {email: dataDto.email},
+                select: {
+                    id: true, createdAt: true, hash: true,
+                    email: true, name: true, username: true, birth_date: true, gender: true,
+                },
             });
 
             if (!user) {
@@ -77,13 +81,10 @@ export class AuthService {
 
             return {
                 success: true,
-                message: "User logged in successfully!",
+                message: "User logged in successfully.",
                 data: {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    createdAt: user.createdAt,
-                    access_token: token,
+                    id: user.id, createdAt: user.createdAt, access_token: token,
+                    name: user.name, email: user.email, username: user.username, birth_date: user.birth_date, gender: user.gender,
                 },
             };
         } catch (err) {

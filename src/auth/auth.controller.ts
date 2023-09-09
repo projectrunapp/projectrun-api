@@ -69,6 +69,6 @@ export class AuthController {
 
         await this.authService.updatePassword(user.id, resetPasswordDto.password);
 
-        return {success: true, message: "Password updated successfully!"};
+        return {success: true, message: "Password updated successfully."};
     }
 }
