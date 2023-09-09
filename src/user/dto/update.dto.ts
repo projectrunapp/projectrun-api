@@ -8,12 +8,12 @@ export class UpdateDto {
 
     @IsOptional()
     @IsString()
-    @Matches(/^(?=.{4,20}$)(?:[a-z\d]+(?:(?:\.|_)[a-z\d])*)+$/)
+    @Matches(/^[a-z0-9\_]{4,20}$/) // example: john_doe123
     username: string;
 
     @IsOptional()
     @IsString()
-    @Matches(/^\d{4}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$/)
+    @Matches(/^\d{4}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$/) // example: 2000-01-01
     birth_date: string;
 
     @IsOptional()
