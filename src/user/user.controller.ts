@@ -25,10 +25,12 @@ export class UserController {
     async getMe(@GetUser() user: User):
         Promise<{ success: boolean, message: string, data: User }>
     {
+        const me = await this.userService.getUserById(user.id);
+
         return {
             success: true,
             message: "User found successfully.",
-            data: user,
+            data: me,
         };
     }
 
