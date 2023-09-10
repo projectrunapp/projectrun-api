@@ -93,20 +93,24 @@ export class UserController {
             },
         }),
     )
-    async imageUpload(@GetUser() user: User, @UploadedFile() avatar: Express.Multer.File):
-        Promise<{ success: boolean, message: string, avatar?: string }>
-    {
+    async imageUpload(@GetUser() user: User, @UploadedFile() avatar: Express.Multer.File): Promise<{
+        success: boolean,
+        message: string,
+        avatar?: string,
+    }> {
         if (!avatar) {
             // HttpStatus.INTERNAL_SERVER_ERROR
             return {success: false, message: "Image upload failed!"};
         }
 
-        await this.userService.updateAvatar(user.id, avatar.filename);
+        // TODO: later upload to cloud storage
+        const avatarUrl = `${process.env.SERVER_HOST}/uploads/avatars/${avatar.filename}`;
+        await this.userService.updateAvatar(user.id, avatarUrl);
 
         return {
             success: true,
             message: "Image uploaded successfully.",
-            avatar: avatar.filename,
+            avatar: avatarUrl,
         };
     }
 }

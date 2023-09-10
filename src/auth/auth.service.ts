@@ -62,7 +62,7 @@ export class AuthService {
             const user = await this.prisma.user.findUnique({
                 where: {email: dataDto.email},
                 select: {
-                    id: true, createdAt: true, hash: true,
+                    id: true, createdAt: true, hash: true, avatar: true,
                     email: true, name: true, username: true, birth_date: true, gender: true,
                 },
             });
@@ -83,7 +83,7 @@ export class AuthService {
                 success: true,
                 message: "User logged in successfully.",
                 data: {
-                    id: user.id, createdAt: user.createdAt, access_token: token,
+                    id: user.id, createdAt: user.createdAt, access_token: token, avatar: user.avatar,
                     name: user.name, email: user.email, username: user.username, birth_date: user.birth_date, gender: user.gender,
                 },
             };
