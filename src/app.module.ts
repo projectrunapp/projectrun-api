@@ -20,6 +20,10 @@ import {MailModule} from "./mail/mail.module";
       rootPath: path.join(__dirname, '..', 'public'),
       serveRoot: '/public',
     }),
+    ServeStaticModule.forRoot({
+      rootPath: path.join(__dirname, '..', 'uploads'),
+      serveRoot: '/uploads',
+    }),
     MailModule,
     AuthModule,
     UserModule,

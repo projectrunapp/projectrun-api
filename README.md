@@ -59,6 +59,12 @@ forever list
 forever stop <pid>
 ```
 
+- [Optional] Sometimes the port is not released after stopping the server. To fix this:
+```bash
+# find and kill the process that uses the port
+kill -9 $(lsof -t -i:3010)
+```
+
 - Browse db via [browser's default host](http://localhost:5555) on development mode:
 ```bash
 npx prisma studio

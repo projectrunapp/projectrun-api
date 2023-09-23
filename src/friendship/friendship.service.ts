@@ -27,10 +27,10 @@ export class FriendshipService {
                 id: true,
                 status: true,
                 sender: {
-                    select: {id: true, name: true, email: true, username: true},
+                    select: {id: true, name: true, email: true, username: true, avatar: true},
                 },
                 receiver: {
-                    select: {id: true, name: true, email: true, username: true},
+                    select: {id: true, name: true, email: true, username: true, avatar: true},
                 },
             },
         });
@@ -60,7 +60,7 @@ export class FriendshipService {
                 id: true,
                 status: true,
                 [filter === 'sent' ? 'receiver' : 'sender']: {
-                    select: {id: true, name: true, email: true, username: true}
+                    select: {id: true, name: true, email: true, username: true, avatar: true}
                 },
             },
         });
@@ -152,6 +152,7 @@ export class FriendshipService {
                 name: true,
                 email: true,
                 username: true,
+                avatar: true,
                 sent: {
                     select: {id: true, status: true, senderId: true, receiverId: true},
                     where: {receiverId: authUserId},
