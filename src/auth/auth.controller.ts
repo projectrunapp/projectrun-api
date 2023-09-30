@@ -6,6 +6,7 @@ import {LoginDto} from "./dto/login.dto";
 import {VerificationEmailDto} from "./dto/verification-email.dto";
 import {ResetPasswordDto} from "./dto/reset-password.dto";
 import {MailService} from "../mail/mail.service";
+import {GoogleSignInDto} from "./dto/google-sign-in.dto";
 
 @Controller('auth')
 export class AuthController {
@@ -28,6 +29,14 @@ export class AuthController {
         Promise<{ success: boolean, message: string, data?: any }>
     {
         return await this.authService.login(loginDataDto);
+    }
+
+    @HttpCode(HttpStatus.OK)
+    @Post("google")
+    async google(@Body() googleDataDto: GoogleSignInDto):
+        Promise<{ success: boolean, message: string, data?: any }>
+    {
+        return await this.authService.googleSignIn(googleDataDto);
     }
 
     @HttpCode(HttpStatus.OK)

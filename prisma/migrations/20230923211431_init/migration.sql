@@ -1,13 +1,17 @@
 -- CreateEnum
 CREATE TYPE "EnumRelationshipStatus" AS ENUM ('PENDING', 'ACCEPTED', 'DECLINED');
 
+-- CreateEnum
+CREATE TYPE "EnumAuthProvider" AS ENUM ('EMAIL', 'GOOGLE');
+
 -- CreateTable
 CREATE TABLE "users" (
     "id" SERIAL NOT NULL,
+    "auth_provider" "EnumAuthProvider" NOT NULL DEFAULT 'EMAIL',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "email" TEXT NOT NULL,
-    "hash" TEXT NOT NULL,
+    "hash" TEXT,
     "verification_code" TEXT,
     "name" TEXT NOT NULL,
     "birth_date" TEXT,
