@@ -16,6 +16,34 @@ export class UserService {
         });
     }
 
+    async getUserRunsCount(id: number): Promise<any> {
+        return this.prisma.run.count({
+            where: {userId: id},
+        });
+    }
+    async getUserRunsDistance(id: number): Promise<any> {
+        return this.prisma.run.aggregate({
+            where: {userId: id},
+            _sum: {
+                distance: true,
+            }
+        });
+    }
+
+    async getUserFriendsCount(id: number): Promise<any> {
+        return this.prisma.friendship.count({
+            where: {
+                OR: [{
+                    senderId: id,
+                    status: 'ACCEPTED',
+                }, {
+                    receiverId: id,
+                    status: 'ACCEPTED',
+                }],
+            },
+        });
+    }
+
     async getByUsername(username: string): Promise<any> {
         return this.prisma.user.findUnique({
             where: {username},
