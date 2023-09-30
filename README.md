@@ -70,6 +70,13 @@ kill -9 $(lsof -t -i:3010)
 npx prisma studio
 ```
 
+- [Development] Reset the database:
+```shell
+npx prisma migrate dev (-y)
+npx prisma db push
+npm run db:restart
+```
+
 
 
 #### Resources:

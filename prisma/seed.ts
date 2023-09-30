@@ -1,15 +1,13 @@
 
-import { PrismaClient } from "@prisma/client";
+import {PrismaClient, EnumAuthProvider} from "@prisma/client";
 import * as argon2 from "argon2";
 import * as process from "process";
-import { faker } from '@faker-js/faker';
+import {faker} from '@faker-js/faker';
 
 // fake data
 const usersCount = 100;
 const minRunsCountPerUser = 0;
 const maxRunsCountPerUser = 100;
-const userShortestRunInMinutes = 1;
-const userLongestRunInMinutes = 300;
 const userMinBirthYear = 1960;
 const userMaxBirthYear = 2010;
 
@@ -57,6 +55,7 @@ async function createUsers(prismaClient: PrismaClient): Promise<any> {
 
     const users = [];
     users.push({
+        auth_provider: EnumAuthProvider.EMAIL, // default
         hash: hashedPassword,
         name: process.env.DEV_USER_NAME || 'User 1',
         email: process.env.DEV_USER_EMAIL || 'user1@gmail.com',
@@ -87,6 +86,7 @@ async function createUsers(prismaClient: PrismaClient): Promise<any> {
         }
 
         users.push({
+            auth_provider: EnumAuthProvider.EMAIL, // default
             hash: hashedPassword,
             name: `${firstName} ${lastName}`,
             email,

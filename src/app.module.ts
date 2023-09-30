@@ -9,6 +9,7 @@ import {FriendshipModule} from "./friendship/friendship.module";
 import {ServeStaticModule} from "@nestjs/serve-static";
 import * as path from "path";
 import {MailModule} from "./mail/mail.module";
+import {HelperModule} from "./utils/helper.module";
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import {MailModule} from "./mail/mail.module";
       rootPath: path.join(__dirname, '..', 'uploads'),
       serveRoot: '/uploads',
     }),
+    HelperModule,
     MailModule,
     AuthModule,
     UserModule,

@@ -10,6 +10,7 @@ import {JwtGuard} from "../auth/jwt.guard";
 import {GetUser} from "../auth/get-user.decorator";
 import {User} from "@prisma/client";
 import {UserService} from "./user.service";
+import {HelperService} from "../utils/helper.service";
 import {UpdateDto} from "./dto/update.dto";
 import {FileInterceptor} from "@nestjs/platform-express";
 import * as path from "path";
@@ -18,7 +19,8 @@ import {diskStorage} from "multer";
 @UseGuards(JwtGuard)
 @Controller('users')
 export class UserController {
-    constructor(private readonly userService: UserService) {}
+    constructor(private readonly userService: UserService,
+                private readonly helperService: HelperService) {}
 
     @HttpCode(HttpStatus.OK)
     @Get('me')
@@ -34,19 +36,32 @@ export class UserController {
         };
     }
 
-    // TODO: add myProfile endpoint
-
     @HttpCode(HttpStatus.OK)
     @Get('profile/:id')
     async getUserById(@Param('id', ParseIntPipe) id: number):
-        Promise<{ success: boolean, message: string, data: User }>
+        Promise<{ success: boolean, message: string, data?: User }>
     {
         const user = await this.userService.getUserById(id);
+        if (!user) {
+            return {success: false, message: "User not found!"};
+        }
+
+        const userRunsCount = await this.userService.getUserRunsCount(user.id);
+
+        const userRunsDistance = await this.userService.getUserRunsDistance(user.id);
+        const humanizedDistance = this.helperService.humanizedDistance(userRunsDistance._sum.distance);
+
+        const userFriendsCount = await this.userService.getUserFriendsCount(user.id);
 
         return {
             success: true,
             message: "User found successfully.",
-            data: user,
+            data: {
+                ...user,
+                runs_count: userRunsCount,
+                runs_distance: humanizedDistance,
+                friends_count: userFriendsCount,
+            },
         };
     }
 
