@@ -16,6 +16,24 @@ export class UserService {
         });
     }
 
+    async getProfileById(id: number, authUserId: number): Promise<any> {
+        return this.prisma.user.findUnique({
+            where: {id},
+            select: {
+                id: true, createdAt: true, avatar: true,
+                email: true, name: true, username: true, gender: true, birth_date: true,
+                sent: {
+                    select: {id: true, status: true, senderId: true, receiverId: true},
+                    where: {receiverId: authUserId},
+                },
+                received: {
+                    select: {id: true, status: true, senderId: true, receiverId: true},
+                    where: {senderId: authUserId},
+                },
+            }
+        });
+    }
+
     async getUserRunsCount(id: number): Promise<any> {
         return this.prisma.run.count({
             where: {userId: id},
