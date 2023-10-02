@@ -18,6 +18,7 @@ CREATE TABLE "users" (
     "gender" TEXT NOT NULL,
     "username" TEXT NOT NULL,
     "avatar" TEXT,
+    "bio" TEXT,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );

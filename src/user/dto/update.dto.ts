@@ -20,4 +20,8 @@ export class UpdateDto {
     @IsString()
     @IsIn(["unknown", "male", "female", "other"]) // TODO: make this an enum
     gender: string;
+
+    @IsOptional()
+    @IsString()
+    bio: string;
 }

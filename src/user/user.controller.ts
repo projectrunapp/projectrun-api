@@ -38,17 +38,17 @@ export class UserController {
 
     @HttpCode(HttpStatus.OK)
     @Get('profile/:id')
-    async getUserById(@Param('id', ParseIntPipe) id: number):
+    async getUserById(@Param('id', ParseIntPipe) id: number, @GetUser() user: User):
         Promise<{ success: boolean, message: string, data?: User }>
     {
-        const user = await this.userService.getUserById(id);
-        if (!user) {
+        const profileUser = await this.userService.getProfileById(id, user.id);
+        if (!profileUser) {
             return {success: false, message: "User not found!"};
         }
 
-        const userRunsCount = await this.userService.getUserRunsCount(user.id);
+        const userRunsCount = await this.userService.getUserRunsCount(profileUser.id);
 
-        const userRunsDistance = await this.userService.getUserRunsDistance(user.id);
+        const userRunsDistance = await this.userService.getUserRunsDistance(profileUser.id);
         const humanizedDistance = this.helperService.humanizedDistance(userRunsDistance._sum.distance);
 
         const userFriendsCount = await this.userService.getUserFriendsCount(user.id);
@@ -57,7 +57,7 @@ export class UserController {
             success: true,
             message: "User found successfully.",
             data: {
-                ...user,
+                ...profileUser,
                 runs_count: userRunsCount,
                 runs_distance: humanizedDistance,
                 friends_count: userFriendsCount,
@@ -95,7 +95,6 @@ export class UserController {
                 },
             }),
             fileFilter: (req, file, cb) => {
-                console.log(!file.originalname.match(/\.(jpg|jpeg|png)$/));
                 if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
                     // HttpStatus.BAD_REQUEST
                     cb(new Error("Only .jpg, .jpeg, and .png images are allowed!"), false);

@@ -20,6 +20,7 @@ model User {
   gender            String
   username          String           @unique
   avatar            String?
+  bio               String?
   received          Friendship[]     @relation("Receiver")
   sent              Friendship[]     @relation("Sender")
   runs              Run[]
