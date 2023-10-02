@@ -11,7 +11,7 @@ export class UserService {
             where: {id},
             select: {
                 id: true, createdAt: true, avatar: true,
-                email: true, name: true, username: true, gender: true, birth_date: true,
+                email: true, name: true, username: true, gender: true, birth_date: true, bio: true,
             }
         });
     }
@@ -21,7 +21,7 @@ export class UserService {
             where: {id},
             select: {
                 id: true, createdAt: true, avatar: true,
-                email: true, name: true, username: true, gender: true, birth_date: true,
+                email: true, name: true, username: true, gender: true, birth_date: true, bio: true,
                 sent: {
                     select: {id: true, status: true, senderId: true, receiverId: true},
                     where: {receiverId: authUserId},
@@ -67,7 +67,7 @@ export class UserService {
             where: {username},
             select: {
                 id: true, createdAt: true,
-                email: true, name: true, username: true, gender: true, birth_date: true,
+                email: true, name: true, username: true, gender: true, birth_date: true, bio: true,
             }
         });
     }
@@ -76,7 +76,8 @@ export class UserService {
         name?: string,
         username?: string,
         birth_date?: string,
-        gender?: string
+        gender?: string,
+        bio?: string,
     }): Promise<void> {
         await this.prisma.user.update({
             where: {id},
