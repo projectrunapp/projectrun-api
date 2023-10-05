@@ -41,6 +41,22 @@ export class RunController {
     }
 
     @HttpCode(HttpStatus.OK)
+    @Get('runs-by-time/:id')
+    async getRunsByTime(@Param('id', ParseIntPipe) id: number, @Query() query: {
+        interval?: string,
+    }): Promise<{ success: boolean, message: string, data?: any[] }>
+    {
+        // TODO: validate query parameters
+        const runData = await this.runService.getRunsByTime(id, query.interval || "ALL");
+
+        return {
+            success: true,
+            message: "Runs retrieved successfully.",
+            data: runData,
+        };
+    }
+
+    @HttpCode(HttpStatus.OK)
     @Get('my-runs/:runId')
     async getMyRun(@GetUser() user: User, @Param('runId', ParseIntPipe) runId: number):
         Promise<{ success: boolean, message: string, data?: any }>

@@ -2,10 +2,12 @@
 import { Injectable } from "@nestjs/common";
 import {PrismaService} from "../prisma/prisma.service";
 import {RunDataDto} from "./dto/run-data.dto";
+import {HelperService} from "../utils/helper.service";
 
 @Injectable({})
 export class RunService {
-    constructor(private prisma: PrismaService) {}
+    constructor(private prisma: PrismaService,
+                private readonly helperService: HelperService) {}
 
     async getRun(id: number, runId: number): Promise<any> {
         return this.prisma.run.findFirst({
@@ -29,47 +31,16 @@ export class RunService {
     }
 
     async getRuns(id: number, {interval, page, per_page, order}): Promise<any> {
+        const {start, end} = this.helperService.getDateRange(interval);
         const where = {
             userId: id,
+            createdAt: {gte: start.toISOString(), lte: end.toISOString()},
         };
-        // TODO: get as enum
-        const intervalValues = ["WEEK", "MONTH", "LAST_3_MONTHS", "LAST_6_MONTHS", "LAST_YEAR"];
-        if (interval && intervalValues.includes(interval)) {
-            const date = new Date();
-            switch (interval) {
-                case "WEEK":
-                    date.setDate(date.getDate() - 7);
-                    break;
-                case "MONTH":
-                    date.setMonth(date.getMonth() - 1);
-                    break;
-                case "LAST_3_MONTHS":
-                    date.setMonth(date.getMonth() - 3);
-                    break;
-                case "LAST_6_MONTHS":
-                    date.setMonth(date.getMonth() - 6);
-                    break;
-                case "LAST_YEAR":
-                    date.setFullYear(date.getFullYear() - 1);
-                    break;
-                default:
-                    break;
-            }
-            where["createdAt"] = {
-                gte: date.toISOString(),
-            };
-        }
 
-        const count = await this.prisma.run.count({
-            where,
-        });
+        const count = await this.prisma.run.count({ where });
 
         if (count === 0) {
-            return {
-                total: 0,
-                pages: 0,
-                runs: [],
-            }
+            return {total: 0, pages: 0, runs: []}
         }
 
         const runs = await this.prisma.run.findMany({
@@ -93,6 +64,43 @@ export class RunService {
             pages: Math.ceil(count / per_page),
             runs,
         }
+    }
+
+    async getRunsByTime(userId: number, interval: string): Promise<any> {
+        const {start, end} = this.helperService.getDateRange(interval);
+        const where = {
+            userId: userId,
+            createdAt: {gte: start.toISOString(), lte: end.toISOString()}
+        };
+
+        const runs = await this.prisma.run.findMany({ where });
+
+        const runsByTimeFrame = {};
+        for (const run of runs) {
+            let dateSplit = run.createdAt.toISOString().split("T")[0];
+            let date: string;
+
+            switch (interval) {
+                case "WEEK": case "MONTH":
+                    date = dateSplit;
+                    break;
+                case "YEAR":
+                    date = dateSplit.slice(0, 4);
+                    break;
+                default: // "ALL"
+                    date = dateSplit.slice(0, 4);
+                    break;
+            }
+
+            if (!runsByTimeFrame[date]) {
+                runsByTimeFrame[date] = {runs_count: 0, distance: 0, duration: 0};
+            }
+            runsByTimeFrame[date].runs_count++;
+            runsByTimeFrame[date].distance += run.distance;
+            runsByTimeFrame[date].duration += run.duration;
+        }
+
+        return runsByTimeFrame;
     }
 
     async delete(userId: number, runId: number): Promise<any> {
