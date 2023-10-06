@@ -4,6 +4,8 @@ import * as argon2 from "argon2";
 import * as process from "process";
 import {faker} from '@faker-js/faker';
 
+const EARTH_RADIUS = 6371000; // Radius of the Earth in meters
+
 // fake data
 const usersCount = 100;
 const minRunsCountPerUser = 0;
@@ -33,13 +35,14 @@ async function connect() {
     }
 }
 
-async function checkIfTableExists(prismaClient: PrismaClient, tableName: string): Promise<unknown> {
+async function checkIfTableExists(prismaClient: PrismaClient, tableName: string): Promise<unknown>
+{
     try {
         const tableExists = await prismaClient.$queryRaw`
             SELECT EXISTS (
-                SELECT FROM information_schema.tables 
-                WHERE  table_schema = 'public'
-                AND    table_name   = '${tableName}'
+                SELECT FROM information_schema.tables
+                WHERE table_schema = 'public'
+                AND table_name = '${tableName}'
             );
         `;
 
@@ -50,7 +53,8 @@ async function checkIfTableExists(prismaClient: PrismaClient, tableName: string)
     }
 }
 
-async function createUsers(prismaClient: PrismaClient): Promise<any> {
+async function createUsers(prismaClient: PrismaClient): Promise<any>
+{
     const hashedPassword = await argon2.hash(process.env.DEV_USER_PASSWORD || 'password');
 
     const users = [];
@@ -108,7 +112,8 @@ async function createUsers(prismaClient: PrismaClient): Promise<any> {
     console.log('\x1b[32m%s\x1b[0m:', `Added ${usersCount} users in total`)
 }
 
-async function createFriendships(prismaClient: PrismaClient): Promise<any> {
+async function createFriendships(prismaClient: PrismaClient): Promise<any>
+{
     enum EnumRelationshipStatus {
         PENDING = "PENDING",
         ACCEPTED = "ACCEPTED",
@@ -154,41 +159,23 @@ async function createFriendships(prismaClient: PrismaClient): Promise<any> {
 }
 
 async function createRuns(prismaClient: PrismaClient): Promise<any> {
-    // Google Maps coordinates
-    const coordinatesRectangle = {
-        topLeft: {lat: 44.662052, lng: -114.447634},
-        topRight: {lat: 44.270990, lng: -89.847386},
-        bottomLeft: {lat: 35.030414, lng: -115.735263},
-        bottomRight: {lat: 34.999016, lng: -91.073858},
-    };
-
     let fakeRunsCount = 0;
-    for (let userId = 1; userId <= usersCount; userId++)
-    {
-        const userRunsCount = faker.number.int({min: minRunsCountPerUser, max: maxRunsCountPerUser});
+    for (let userId = 1; userId <= usersCount; userId++) {
+        const userRunsCount = faker.number.int({ min: minRunsCountPerUser, max: maxRunsCountPerUser });
         fakeRunsCount += userRunsCount;
         const userRuns = [];
 
-        const toDate = new Date();
-        const fromDate = new Date(toDate.setDate(toDate.getDate() - userRunsCount));
-        const runningDates = faker.date.betweens({
-            from: fromDate,
-            to: toDate,
-            count: userRunsCount,
-        });
+        // Define a random timestamp between 3 months ago and 1 week ago
+        let timestamp = Date.now() - faker.number.int({ min: 7, max: 90 }) * 24 * 60 * 60 * 1000;
 
         for (let i = 0; i < userRunsCount; i++) {
-            const dateHour = runningDates[i].getHours();
+            const dateHour = new Date(timestamp).getHours();
             let title = "";
-            if (dateHour >= 6 && dateHour < 12) {
-                title = "Morning Run";
-            } else if (dateHour >= 12 && dateHour < 18) {
-                title = "Afternoon Run";
-            } else if (dateHour >= 18 && dateHour < 24) {
-                title = "Evening Run";
-            } else {
-                title = "Night Run";
-            }
+
+            if (dateHour >= 6 && dateHour < 12) { title = "Morning Run"; }
+            else if (dateHour >= 12 && dateHour < 18) { title = "Afternoon Run"; }
+            else if (dateHour >= 18 && dateHour < 24) { title = "Evening Run"; }
+            else { title = "Night Run"; }
 
             const coordinatesRectangle = {
                 topLeft: { lat: 44.662052, lng: -114.447634 },
@@ -196,12 +183,12 @@ async function createRuns(prismaClient: PrismaClient): Promise<any> {
                 bottomLeft: { lat: 35.030414, lng: -115.735263 },
                 bottomRight: { lat: 34.999016, lng: -91.073858 },
             };
-            const numCoordinatesToGenerate = 100;
+            const coordinatesCountToGenerate = 100;
             const maxDistanceBetweenCoordinates = 100; // In meters
 
             const generatedCoordinates = generateCoordinatesInSequence(
                 coordinatesRectangle,
-                numCoordinatesToGenerate,
+                coordinatesCountToGenerate,
                 maxDistanceBetweenCoordinates
             );
 
@@ -215,8 +202,8 @@ async function createRuns(prismaClient: PrismaClient): Promise<any> {
                 // weather: faker.helpers.arrayElement(['unknown', 'sunny', 'cloudy', 'rainy', 'snowy', 'windy']),
                 // notes: faker.lorem.sentence(),
                 title: title,
-                started_at: new Date(generatedCoordinates[0].timestamp * 1000),
-                completed_at: new Date(generatedCoordinates[generatedCoordinates.length - 1].timestamp * 1000),
+                started_at: new Date(timestamp), // Use the sequentially increasing timestamp
+                completed_at: new Date(timestamp + (generatedCoordinates.length - 1) * 1000), // Calculate completed_at based on coordinates
                 coordinates_count: generatedCoordinates.length,
                 first_coordinate_lat: parseFloat(generatedCoordinates[0].lat),
                 first_coordinate_lng: parseFloat(generatedCoordinates[0].lng),
@@ -231,6 +218,10 @@ async function createRuns(prismaClient: PrismaClient): Promise<any> {
                 avg_speed_pauses_included: generatedCoordinates[generatedCoordinates.length - 1].avg_speed_total,
                 coordinates: JSON.stringify(generatedCoordinates),
             });
+
+            // Increment timestamp for the next run by a random amount of time between 1 and 48 hours
+            const randomAdditionalTime = faker.number.int({ min: 1, max: 48 }) * 60 * 60 * 1000;
+            timestamp += randomAdditionalTime + (generatedCoordinates.length - 1) * 1000;
         }
 
         await prismaClient.run.createMany({
@@ -263,46 +254,72 @@ connect().then(async (prismaClient) => {
     process.exit(1);
 });
 
-
+// Types definitions
+type Coordinate = {
+    lat: number;
+    lng: number;
+}
+type Rectangle = {
+    topLeft: Coordinate;
+    topRight: Coordinate;
+    bottomLeft: Coordinate;
+    bottomRight: Coordinate;
+}
 
 // Function to generate a random coordinate within the given rectangle
-function getRandomCoordinateInRectangle(rectangle) {
+function getRandomCoordinateInRectangle(rectangle: Rectangle): Coordinate
+{
     const randomLat = Math.random() * (rectangle.topLeft.lat - rectangle.bottomLeft.lat) + rectangle.bottomLeft.lat;
     const randomLng = Math.random() * (rectangle.topRight.lng - rectangle.topLeft.lng) + rectangle.topLeft.lng;
     return { lat: randomLat, lng: randomLng };
 }
 
 // Function to calculate the distance between two coordinates using the Haversine formula
-function calculateDistance(lat1, lng1, lat2, lng2) {
-    const earthRadius = 6371000; // Radius of the Earth in meters
-    const dLat = (lat2 - lat1) * (Math.PI / 180);
-    const dLng = (lng2 - lng1) * (Math.PI / 180);
+function calculateDistance(coordinate1: Coordinate, coordinate2: Coordinate): number
+{
+    const dLat = (coordinate2.lat - coordinate1.lat) * (Math.PI / 180);
+    const dLng = (coordinate2.lng - coordinate1.lng) * (Math.PI / 180);
     const a =
         Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+        Math.cos(coordinate1.lat * (Math.PI / 180)) * Math.cos(coordinate2.lat * (Math.PI / 180)) *
         Math.sin(dLng / 2) * Math.sin(dLng / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return earthRadius * c;
+    return EARTH_RADIUS * c;
 }
 
 // Function to generate a new coordinate within a given meters of the given coordinate
-function generateRandomCoordinateWithinRadius(coordinate, maxDistance) {
+function generateRandomCoordinateWithinRadius(coordinate: Coordinate, maxDistance: number, maxAngle = 5): Coordinate
+{
+    // Generate a random angle between 0 and maxAngle (in degrees)
+    const randomAngle = Math.random() * maxAngle * (Math.PI / 180); // Convert degrees to radians
+
+    // Generate a random distance within the given radius
     const randomDistance = Math.random() * maxDistance;
-    const randomAngle = Math.random() * 2 * Math.PI;
 
     // Convert distance to latitude and longitude offsets
-    const latOffset = (randomDistance / 6371000) * (180 / Math.PI);
-    const lngOffset = (randomDistance / 6371000) * (180 / Math.PI) / Math.cos(coordinate.lat * (Math.PI / 180));
+    const latOffset = (randomDistance / EARTH_RADIUS) * (180 / Math.PI);
+    const lngOffset = (randomDistance / EARTH_RADIUS) * (180 / Math.PI) / Math.cos(coordinate.lat * (Math.PI / 180));
 
     // Calculate the new coordinates
-    const newLat = coordinate.lat + latOffset;
-    const newLng = coordinate.lng + lngOffset;
+    const newLat = coordinate.lat + latOffset * Math.cos(randomAngle);
+    const newLng = coordinate.lng + lngOffset * Math.sin(randomAngle);
 
     return { lat: newLat, lng: newLng };
 }
 
 // Function to generate a sequence of coordinates within the given rectangle
-function generateCoordinatesInSequence(rectangle, numCoordinates, maxDistanceBetweenCoordinates) {
+function generateCoordinatesInSequence(rectangle: Rectangle, numCoordinates: number, maxDistanceBetweenCoordinates: number): {
+    lat: string,
+    lng: string,
+    timestamp: number,
+    distance_piece: number,
+    distance_total: number,
+    duration_piece: number,
+    duration_total: number,
+    avg_speed_piece: number,
+    avg_speed_total: number,
+}[]
+{
     const coordinates = [];
     let currentCoordinate = getRandomCoordinateInRectangle(rectangle);
     const randomDate = new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000);
@@ -322,7 +339,7 @@ function generateCoordinatesInSequence(rectangle, numCoordinates, maxDistanceBet
 
     for (let i = 1; i < numCoordinates; i++) {
         const newCoordinate = generateRandomCoordinateWithinRadius(currentCoordinate, maxDistanceBetweenCoordinates);
-        const distance = calculateDistance(currentCoordinate.lat, currentCoordinate.lng, newCoordinate.lat, newCoordinate.lng);
+        const distance = calculateDistance(currentCoordinate, newCoordinate);
         const duration_piece = Math.random() * 10 + 10; // Random duration between 10 and 20 seconds
 
         const timestamp = coordinates[i - 1].timestamp * 1000 + duration_piece * 1000;
@@ -349,21 +366,3 @@ function generateCoordinatesInSequence(rectangle, numCoordinates, maxDistanceBet
 
     return coordinates;
 }
-
-// function generateCoordinatesInSequence(rectangle, numCoordinates, maxDistanceBetweenCoordinates) {
-//     const coordinates = [];
-//     let currentCoordinate = getRandomCoordinateInRectangle(rectangle);
-//     coordinates.push(currentCoordinate);
-//
-//     for (let i = 1; i < numCoordinates; i++) {
-//         let newCoordinate;
-//         do {
-//             newCoordinate = generateRandomCoordinateWithinRadius(currentCoordinate, maxDistanceBetweenCoordinates);
-//         } while (calculateDistance(currentCoordinate.lat, currentCoordinate.lng, newCoordinate.lat, newCoordinate.lng) > maxDistanceBetweenCoordinates);
-//
-//         coordinates.push(newCoordinate);
-//         currentCoordinate = newCoordinate;
-//     }
-//
-//     return coordinates;
-// }

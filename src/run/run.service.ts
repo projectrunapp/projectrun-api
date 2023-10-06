@@ -34,7 +34,7 @@ export class RunService {
         const {start, end} = this.helperService.getDateRange(interval);
         const where = {
             userId: id,
-            createdAt: {gte: start.toISOString(), lte: end.toISOString()},
+            started_at: {gte: start.toISOString(), lte: end.toISOString()},
         };
 
         const count = await this.prisma.run.count({ where });
@@ -70,22 +70,22 @@ export class RunService {
         const {start, end} = this.helperService.getDateRange(interval);
         const where = {
             userId: userId,
-            createdAt: {gte: start.toISOString(), lte: end.toISOString()}
+            started_at: {gte: start.toISOString(), lte: end.toISOString()}
         };
 
         const runs = await this.prisma.run.findMany({ where });
 
         const runsByTimeFrame = {};
         for (const run of runs) {
-            let dateSplit = run.createdAt.toISOString().split("T")[0];
+            let dateSplit = run.started_at.toISOString().split("T")[0];
             let date: string;
 
             switch (interval) {
                 case "WEEK": case "MONTH":
-                    date = dateSplit;
+                    date = dateSplit.slice(0, 10);
                     break;
                 case "YEAR":
-                    date = dateSplit.slice(0, 4);
+                    date = dateSplit.slice(0, 7);
                     break;
                 default: // "ALL"
                     date = dateSplit.slice(0, 4);
